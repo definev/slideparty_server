@@ -1,7 +1,5 @@
-// import 'package:mongo_dart/mongo_dart.dart';
 import 'package:shelf/shelf_io.dart' as sio;
 import 'package:shelf_router/shelf_router.dart';
-// import 'package:slideparty_server/db.dart';
 import 'package:slideparty_server/slideparty_socket_handler.dart';
 
 void main(List<String> args) async {
