@@ -1,77 +1,69 @@
+import 'dart:convert';
+
 import 'package:mongo_dart/mongo_dart.dart';
 import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
-import 'package:slideparty_server/db.dart';
+import 'package:slideparty_socket/slideparty_socket_be.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
-shelf.Handler slidepartySocketHandler(String roomCode) {
+Map<String, RoomData> rooms = {};
+
+shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
   return shelf.Pipeline() //
       .addMiddleware(shelf.logRequests())
       .addHandler(
     webSocketHandler(
       (websocket) {
+        final size = int.tryParse(boardSize);
         final ws = websocket as WebSocketChannel;
+        if (size == null) {
+          ws.sink.add(jsonEncode({
+            'type': ServerStateType.wrongBoardSize,
+            'payload': null,
+          }));
+          return;
+        }
+        if (size < 3 || size > 5) {
+          ws.sink.add(jsonEncode({
+            'type': ServerStateType.wrongBoardSize,
+            'payload': null,
+          }));
+          return;
+        }
+        print('New connection for $roomCode');
         final userId = Uuid().v4();
-        final col = mongo.collection('rooms');
-        ws.stream.listen(
-          (message) async {
-            print("Request: $roomCode");
-            print(message);
+        if (rooms[roomCode] == null) {
+          rooms[roomCode] = RoomData(code: roomCode, players: {});
+        }
+        ws.stream.map((raw) => jsonDecode(raw)).listen(
+          (event) async {
+            print('Request: $roomCode');
+            print('Type: ${event['type']}');
+            print('Payload: ${event['payload']}');
 
-            var room = await col.findOne(where.eq('code', roomCode));
-            if (room == null) {
-              print("Create Room");
-              await col.insertOne(
-                {
-                  'code': roomCode,
-                  'users': {
-                    userId: {
-                      'name': 'Guest 0',
-                      'color': 'red',
-                      'ready': false,
-                    }
-                  },
-                },
-              );
-              room = await col.findOne(where.eq('code', roomCode));
-            } else {
-              print("Create Room");
-              await col.replaceOne(
-                where.eq('code', roomCode),
-                {
-                  'code': roomCode,
-                  'users': {
-                    ...room['users'],
-                    userId: {
-                      'name': 'Guest ${room['users'].length}',
-                      'color': 'red',
-                      'ready': false,
-                    }
-                  },
-                },
-              );
-              room = await col.findOne(where.eq('code', roomCode));
+            switch (event['type']) {
+              case ClientEventType.sendName:
+                final payload = SendName.fromJson(event['payload']);
+                final oldData = rooms[roomCode]!.players[userId];
+                if (oldData == null) {
+                  rooms[roomCode] = rooms[roomCode]!.copyWith(players: {
+                    ...rooms[roomCode]!.players,
+                    userId: PlayerData(
+                      affectedActions: {},
+                      color:
+                          PlayerColors.values[rooms[roomCode]!.players.length],
+                      name: payload.name,
+                      currentBoard: '[]',
+                      usedActions: [],
+                    ),
+                  });
+                }
+                break;
+              default:
             }
-
-            ws.sink.add("Pong from server: Your roomCode: $roomCode");
           },
-          onDone: () async {
-            final room = await col.findOne(where.eq('code', roomCode));
-            if (room?['users'].length == 1) {
-              print("Remove Room");
-              await col.deleteOne(where.eq('code', roomCode));
-            } else {
-              print("Out Room");
-              await col.replaceOne(
-                where.eq('code', roomCode),
-                {
-                  'code': roomCode,
-                  'users': room?['users']..remove(userId),
-                },
-              );
-            }
-
-            print('Done: No more connections at $roomCode');
+          onDone: () {
+            print('\nConnection disconnect\n');
           },
           cancelOnError: true,
         );
