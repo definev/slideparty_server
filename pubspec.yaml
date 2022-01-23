@@ -14,7 +14,9 @@ dependencies:
   shelf_web_socket: ^1.0.1
   uuid: ^3.0.5
   slideparty_socket:
-    path: "packages/slideparty_socket"
+    git:
+      url: https://github.com/definev/slideparty_socket.git
+      ref: main
 
 dev_dependencies:
   http: ^0.13.0

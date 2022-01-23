@@ -340,9 +340,11 @@ packages:
   slideparty_socket:
     dependency: "direct main"
     description:
-      path: "packages/slideparty_socket"
-      relative: true
-    source: path
+      path: "."
+      ref: main
+      resolved-ref: a3ada2a65939a855e8d8e473a8fdc369544e66cd
+      url: "https://github.com/definev/slideparty_socket.git"
+    source: git
     version: "1.0.0"
   source_map_stack_trace:
     dependency: transitive
