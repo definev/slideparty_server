@@ -54,13 +54,15 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
           }
         }).listen(
           (event) async {
-            if (event == null || event! is Map) return;
+            if (event == null) return;
+
+            print('EVENT: ${event['type']}');
 
             switch (event['type']) {
               case ClientEventType.joinRoom:
                 final payload = JoinRoom.fromJson(event['payload']);
                 userId = payload.userId;
-                break;
+                return;
               case ClientEventType.sendName:
                 final payload = SendName.fromJson(event['payload']);
                 final oldData = data.players[userId];

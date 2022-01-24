@@ -6,9 +6,9 @@ import 'package:uuid/uuid.dart';
 
 // Example of connect to a server
 void main() {
-  SlidepartySocket ssk = SlidepartySocket(RoomInfo(3, '1234'));
+  SlidepartySocket ssk = SlidepartySocket(RoomInfo(3, '1234'), true);
   ssk.send(ClientEvent.joinRoom(Uuid().v4()));
-  Timer.periodic(Duration(seconds: 1), (timer) {
+  Timer.periodic(Duration(milliseconds: 500), (timer) {
     ssk.send(
       ClientEvent.sendBoard(
         List.generate(3 * 3, (index) => index)..shuffle(),
