@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as sio;
 import 'package:shelf_router/shelf_router.dart';
@@ -12,7 +14,7 @@ void main(List<String> args) async {
             slidepartySocketHandler(size, roomCode)(request));
 
   sio
-      .serve(router, 'slidepartyserver.herokuapp.com', int.parse('8080')) //
+      .serve(router, '0.0.0.0', int.parse('8080')) //
       .then((server) =>
           print('Server is serving at ${server.address.host}:${server.port}'));
 }
