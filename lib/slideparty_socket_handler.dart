@@ -45,8 +45,17 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
           data = newData;
         });
 
-        ws.stream.map((raw) => jsonDecode(raw)).listen(
+        ws.stream.map((raw) {
+          try {
+            return jsonDecode(raw);
+          } catch (e) {
+            print('Error event in room $roomCode by $userId');
+            return null;
+          }
+        }).listen(
           (event) async {
+            if (event == null || event! is Map) return;
+
             switch (event['type']) {
               case ClientEventType.sendName:
                 final payload = SendName.fromJson(event['payload']);
