@@ -7,8 +7,9 @@ import 'package:slideparty_socket/slideparty_socket_fe.dart';
 void main() {
   List<String> ids = ['1234', '4321'];
   SlidepartySocket ssk =
-      SlidepartySocket('ws://localhost:8080/ws/3/${ids[Random().nextInt(1)]}');
-  Timer.periodic(Duration(seconds: 10), (timer) {
+      SlidepartySocket(
+      'ws://118.71.116.26:8080/ws/3/${ids[Random().nextInt(1)]}');
+  Timer.periodic(Duration(seconds: 1), (timer) {
     ssk.send(
       ClientEvent.sendBoard(
         List.generate(3 * 3, (index) => index)..shuffle(),
