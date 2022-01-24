@@ -118,11 +118,11 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
             playerSub.cancel();
             if (data.players.length == 1) {
               roomStreamControllers.remove(roomCode);
-              print('Remove room $roomCode\n');
+              print('Remove room $roomCode');
             } else {
               data = data.copyWith(players: data.players..remove(userId));
               controller.updateState(data);
-              print('Remove player $userId from room $roomCode\n');
+              print('Remove player $userId from room $roomCode');
             }
           },
           cancelOnError: true,

@@ -8,7 +8,7 @@ void main() {
   List<String> ids = ['1234', '4321'];
   SlidepartySocket ssk =
       SlidepartySocket(
-      'ws://118.71.116.26:8080/ws/3/${ids[Random().nextInt(1)]}');
+      'ws://slidepartyserver.herokuapp.com/ws/3/${ids[Random().nextInt(1)]}');
   Timer.periodic(Duration(seconds: 1), (timer) {
     ssk.send(
       ClientEvent.sendBoard(
