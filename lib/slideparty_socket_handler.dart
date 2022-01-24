@@ -31,7 +31,7 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
           return;
         }
         print('New connection for $roomCode');
-        final userId = Uuid().v4();
+        late String userId;
         RoomStreamController controller;
         if (!roomStreamControllers.containsKey(roomCode)) {
           controller = RoomStreamController(roomCode);
@@ -57,6 +57,10 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
             if (event == null || event! is Map) return;
 
             switch (event['type']) {
+              case ClientEventType.joinRoom:
+                final payload = JoinRoom.fromJson(event['payload']);
+                userId = payload.userId;
+                break;
               case ClientEventType.sendName:
                 final payload = SendName.fromJson(event['payload']);
                 final oldData = data.players[userId];
@@ -73,26 +77,30 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
                     ),
                   });
                 } else {
-                  data = data.copyWith(players: {
-                    ...data.players,
-                    userId: oldData.copyWith(name: payload.name),
-                  });
+                  data = data.copyWith(
+                    players: {
+                      ...data.players,
+                      userId: oldData.copyWith(name: payload.name),
+                    },
+                  );
                 }
                 break;
               case ClientEventType.sendBoard:
                 final payload = SendBoard.fromJson(event['payload']);
                 final oldPlayerData = data.players[userId];
                 if (oldPlayerData == null) {
-                  data = data.copyWith(players: {
-                    ...data.players,
-                    userId: PlayerData(
-                      affectedActions: {},
-                      color: PlayerColors.values[data.players.length],
-                      name: 'Guest ${data.players.length + 1}',
-                      currentBoard: payload.board,
-                      usedActions: [],
-                    ),
-                  });
+                  data = data.copyWith(
+                    players: {
+                      ...data.players,
+                      userId: PlayerData(
+                        affectedActions: {},
+                        color: PlayerColors.values[data.players.length],
+                        name: 'Guest ${data.players.length + 1}',
+                        currentBoard: payload.board,
+                        usedActions: [],
+                      ),
+                    },
+                  );
                 } else {
                   data = data.copyWith(players: {
                     ...data.players,

@@ -5,10 +5,7 @@ import 'package:slideparty_socket/slideparty_socket_fe.dart';
 
 // Example of connect to a server
 void main() {
-  List<String> ids = ['1234', '4321'];
-  SlidepartySocket ssk =
-      SlidepartySocket(
-      'ws://slidepartyserver.herokuapp.com/ws/3/${ids[Random().nextInt(1)]}');
+  SlidepartySocket ssk = SlidepartySocket(RoomInfo(3, '1234'));
   Timer.periodic(Duration(seconds: 1), (timer) {
     ssk.send(
       ClientEvent.sendBoard(
