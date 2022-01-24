@@ -4,7 +4,6 @@ import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:slideparty_server/room_stream_controller.dart';
 import 'package:slideparty_socket/slideparty_socket_be.dart';
-import 'package:uuid/uuid.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
@@ -31,8 +30,9 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
           return;
         }
         print('New connection for $roomCode');
-        late String userId;
         RoomStreamController controller;
+        late String userId;
+
         if (!roomStreamControllers.containsKey(roomCode)) {
           controller = RoomStreamController(roomCode);
           roomStreamControllers[roomCode] = controller;
@@ -49,7 +49,7 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
           try {
             return jsonDecode(raw);
           } catch (e) {
-            print('Error event in room $roomCode by $userId');
+            print('Error event in room $roomCode: $e');
             return null;
           }
         }).listen(
