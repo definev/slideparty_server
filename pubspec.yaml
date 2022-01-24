@@ -8,7 +8,6 @@ environment:
 publish_to: 'none'
 
 dependencies:
-  mongo_dart: ^0.7.4
   shelf: ^1.2.0
   shelf_router: ^1.1.2
   shelf_web_socket: ^1.0.1

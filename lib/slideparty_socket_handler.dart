@@ -1,10 +1,10 @@
 import 'dart:convert';
 
-import 'package:mongo_dart/mongo_dart.dart';
 import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:slideparty_server/room_stream_controller.dart';
 import 'package:slideparty_socket/slideparty_socket_be.dart';
+import 'package:uuid/uuid.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
@@ -81,8 +81,8 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
                 break;
               case ClientEventType.sendBoard:
                 final payload = SendBoard.fromJson(event['payload']);
-                final oldData = data.players[userId];
-                if (oldData == null) {
+                final oldPlayerData = data.players[userId];
+                if (oldPlayerData == null) {
                   data = data.copyWith(players: {
                     ...data.players,
                     userId: PlayerData(
@@ -96,7 +96,7 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
                 } else {
                   data = data.copyWith(players: {
                     ...data.players,
-                    userId: oldData.copyWith(currentBoard: payload.board),
+                    userId: oldPlayerData.copyWith(currentBoard: payload.board),
                   });
                 }
                 break;
