@@ -62,30 +62,23 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
               case ClientEventType.joinRoom:
                 final payload = JoinRoom.fromJson(event['payload']);
                 userId = payload.userId;
+                if (data.players.length == 4) {
+                  ws.sink.add(jsonEncode({'type': ServerStateType.roomFull}));
+                  return;
+                }
+                print('User $userId joined room $roomCode');
+                ws.sink.add(jsonEncode({'type': ServerStateType.connected}));
                 return;
               case ClientEventType.sendName:
                 final payload = SendName.fromJson(event['payload']);
-                final oldData = data.players[userId];
-                if (oldData == null) {
-                  data = data.copyWith(players: {
+                final oldData = data.players[userId]!;
+
+                data = data.copyWith(
+                  players: {
                     ...data.players,
-                    userId: PlayerData(
-                      affectedActions: {},
-                      color: PlayerColors.values[data.players.length],
-                      name: payload.name,
-                      currentBoard: List.generate(size * size, (index) => index)
-                        ..shuffle(),
-                      usedActions: [],
-                    ),
-                  });
-                } else {
-                  data = data.copyWith(
-                    players: {
-                      ...data.players,
-                      userId: oldData.copyWith(name: payload.name),
-                    },
-                  );
-                }
+                    userId: oldData.copyWith(name: payload.name),
+                  },
+                );
                 break;
               case ClientEventType.sendBoard:
                 final payload = SendBoard.fromJson(event['payload']);
