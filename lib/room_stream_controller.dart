@@ -8,9 +8,12 @@ Map<String, RoomStreamController> roomStreamControllers = {};
 
 class RoomStreamController {
   final StreamController<RoomData> _controller = StreamController.broadcast();
-  RoomStreamController(String roomCode)
-      : data = RoomData(code: roomCode, players: {});
-  RoomData data;
+  RoomStreamController(String roomCode) {
+    _controller.sink.add(RoomData(code: roomCode, players: {}));
+  }
+  Future<RoomData> get data {
+    return _controller.stream.last;
+  }
 
   void updateState(RoomData data) {
     _controller.sink.add(data);

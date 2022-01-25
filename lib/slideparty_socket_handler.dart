@@ -11,7 +11,7 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
       .addMiddleware(shelf.logRequests())
       .addHandler(
     webSocketHandler(
-      (websocket) {
+      (websocket) async {
         final size = int.tryParse(boardSize);
         final ws = websocket as WebSocketChannel;
 
@@ -39,7 +39,7 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
         } else {
           controller = roomStreamControllers[roomCode]!;
         }
-        var data = controller.data;
+        var data = await controller.data;
         final playerSub = controller.listen((newData) {
           controller.fireState(ws, newData);
           data = newData;
@@ -97,10 +97,13 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
                     },
                   );
                 } else {
-                  data = data.copyWith(players: {
-                    ...data.players,
-                    userId: oldPlayerData.copyWith(currentBoard: payload.board),
-                  });
+                  data = data.copyWith(
+                    players: {
+                      ...data.players,
+                      userId:
+                          oldPlayerData.copyWith(currentBoard: payload.board),
+                    },
+                  );
                 }
                 break;
               case ClientEventType.sendAction:
