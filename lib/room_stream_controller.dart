@@ -14,12 +14,12 @@ class RoomStreamController {
   RoomData data;
 
   void updateState(RoomData newData) {
-    newData = newData;
+    data = newData;
     _controller.sink.add(newData);
   }
 
   StreamSubscription listen(void Function(RoomData data) onListen) =>
-      _controller.stream.listen(onListen);
+      _controller.stream.distinct().listen(onListen);
 
   void fireState(WebSocketChannel ws, RoomData data) {
     ws.sink.add(jsonEncode({

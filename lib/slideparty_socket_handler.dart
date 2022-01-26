@@ -44,7 +44,6 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
 
         final playerSub = controller.listen((newData) {
           controller.fireState(ws, newData);
-          data = newData;
         });
 
         ws.stream.map((raw) {
