@@ -39,7 +39,9 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
         } else {
           controller = roomStreamControllers[roomCode]!;
         }
-        var data = await controller.data;
+
+        RoomData data = controller.data;
+
         final playerSub = controller.listen((newData) {
           controller.fireState(ws, newData);
           data = newData;
@@ -56,13 +58,12 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
           (event) async {
             if (event == null) return;
 
-            print('EVENT: ${event['type']}');
-
             switch (event['type']) {
               case ClientEventType.joinRoom:
                 final payload = JoinRoom.fromJson(event['payload']);
                 userId = payload.userId;
                 if (data.players.length == 4) {
+                  print('Error: Room $roomCode is full');
                   ws.sink.add(jsonEncode({'type': ServerStateType.roomFull}));
                   return;
                 }
