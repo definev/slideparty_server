@@ -40,15 +40,16 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
           controller = roomStreamControllers[roomCode]!;
         }
 
-        final playerSub = controller.listen((newData) {
-          controller.fireState(ws, newData);
-        });
+        final playerSub = controller.listen(
+          (newData) => controller.fireState(ws, newData),
+        );
 
         ws.stream.map((raw) {
           try {
             return jsonDecode(raw);
           } catch (e) {
             print('Error event in room $roomCode: $e');
+            print('Raw: $raw');
             return null;
           }
         }).listen(
@@ -67,17 +68,6 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
                 print('User $userId joined room $roomCode');
                 ws.sink.add(jsonEncode({'type': ServerStateType.connected}));
                 return;
-              case ClientEventType.sendName:
-                final payload = SendName.fromJson(event['payload']);
-                final oldData = controller.data.players[userId]!;
-
-                controller.data = controller.data.copyWith(
-                  players: {
-                    ...controller.data.players,
-                    userId: oldData.copyWith(name: payload.name),
-                  },
-                );
-                break;
               case ClientEventType.sendBoard:
                 final payload = SendBoard.fromJson(event['payload']);
                 final oldPlayerData = controller.data.players[userId];
@@ -87,8 +77,8 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
                       ...controller.data.players,
                       userId: PlayerData(
                         affectedActions: {},
-                        color: PlayerColors.values[controller.data.players.length],
-                        name: 'Guest ${controller.data.players.length + 1}',
+                        color:
+                            PlayerColors.values[controller.data.players.length],
                         currentBoard: payload.board,
                         usedActions: [],
                       ),
@@ -107,20 +97,55 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
               case ClientEventType.sendAction:
                 final payload = SendAction.fromJson(event['payload']);
                 final oldData = controller.data;
-                Map<String, PlayerState> players = oldData.players;
-                players[payload.affectedPlayerId] =
-                    players[payload.affectedPlayerId]!.copyWith(
-                  affectedActions: {
-                    ...players[payload.affectedPlayerId]!.affectedActions,
-                    userId: payload.action,
-                  },
-                );
-                players[userId] = players[userId]!.copyWith(
-                  usedActions: [
-                    ...players[userId]!.usedActions,
-                    payload.action,
-                  ],
-                );
+                final players = oldData.players;
+
+                switch (payload.action) {
+                  case SlidepartyActions.clear:
+                    players[payload.affectedPlayerId] =
+                        players[payload.affectedPlayerId]!.copyWith(
+                      affectedActions: {},
+                    );
+                    controller.data =
+                        controller.data.copyWith(players: players);
+                    controller.updateState(controller.data);
+                    return;
+                  default:
+                    players[payload.affectedPlayerId] =
+                        players[payload.affectedPlayerId]!.copyWith(
+                      affectedActions: {
+                        ...players[payload.affectedPlayerId]!.affectedActions,
+                        userId: payload.action,
+                      },
+                    );
+                    players[userId] = players[userId]!.copyWith(
+                      usedActions: [
+                        ...players[userId]!.usedActions,
+                        payload.action,
+                      ],
+                    );
+                    controller.data = oldData.copyWith(players: players);
+                    Future.delayed(
+                      const Duration(seconds: 10),
+                      () {
+                        final oldData = controller.data;
+                        final players = oldData.players;
+                        players[payload.affectedPlayerId] =
+                            players[payload.affectedPlayerId]!.copyWith(
+                          affectedActions: {
+                            ...players[payload.affectedPlayerId]!
+                                .affectedActions,
+                          }..removeWhere(
+                              (key, value) =>
+                                  key == userId && value == payload.action,
+                            ),
+                        );
+                        controller.data =
+                            controller.data.copyWith(players: players);
+                        controller.updateState(controller.data);
+                        return;
+                      },
+                    );
+                }
                 break;
               default:
             }
@@ -133,7 +158,8 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
               roomStreamControllers.remove(roomCode);
               print('Remove room $roomCode');
             } else {
-              controller.data = controller.data.copyWith(players: controller.data.players..remove(userId));
+              controller.data = controller.data
+                  .copyWith(players: controller.data.players..remove(userId));
               controller.updateState(controller.data);
               print('Remove player $userId from room $roomCode');
             }
