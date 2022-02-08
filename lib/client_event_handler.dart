@@ -130,9 +130,12 @@ class ClientEventHandler {
               affectedActions: {
                 ...controller
                     .data.players[payload.affectedPlayerId]!.affectedActions,
-              }..removeWhere(
-                  (key, value) => key == playerId && value == payload.action,
-                ),
+                playerId: [
+                  ...controller.data.players[payload.affectedPlayerId]!
+                      .affectedActions[playerId]!
+                    ..remove(payload.action),
+                ],
+              }..removeWhere((key, value) => value.isEmpty),
             );
             controller.data = controller.data.copyWith(players: players);
             return;
