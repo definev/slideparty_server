@@ -31,8 +31,7 @@ class ClientEventHandler {
 
   void onSendBoard(dynamic json) {
     final payload = SendBoard.fromJson(json);
-    final oldPlayerData = controller.data.players[playerId];
-    if (oldPlayerData == null) {
+    if (controller.data.players[playerId] == null) {
       controller.data = controller.data.copyWith(
         players: {
           ...controller.data.players,
@@ -49,7 +48,10 @@ class ClientEventHandler {
       controller.data = controller.data.copyWith(
         players: {
           ...controller.data.players,
-          playerId: oldPlayerData.copyWith(currentBoard: payload.board),
+          playerId: controller //
+              .data
+              .players[playerId]!
+              .copyWith(currentBoard: payload.board),
         },
       );
     }
@@ -59,11 +61,10 @@ class ClientEventHandler {
 
   void onSendAction(dynamic json) {
     final payload = SendAction.fromJson(json);
-    final oldData = controller.data;
-    final players = oldData.players;
 
     switch (payload.action) {
       case SlidepartyActions.clear:
+        final players = controller.data.players;
         players[playerId] = players[playerId]!.copyWith(
           affectedActions: {},
           usedActions: [...players[playerId]!.usedActions, payload.action],
@@ -76,6 +77,7 @@ class ClientEventHandler {
           '\n | From player $playerId'
           '\n | To player ${payload.affectedPlayerId}',
         );
+        final players = controller.data.players;
         players[payload.affectedPlayerId] =
             players[payload.affectedPlayerId]!.copyWith(
           affectedActions: {
