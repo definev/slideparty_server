@@ -21,10 +21,10 @@ class RoomStreamController {
   StreamSubscription listen(void Function(RoomData data) onListen) =>
       _controller.stream.distinct().listen(onListen);
 
-  void fireState(WebSocketChannel ws, RoomData data) {
-    ws.sink.add(jsonEncode({
-      'type': ServerStateType.roomData,
-      'payload': data.toJson(),
-    }));
-  }
+  void fireState(WebSocketChannel ws, RoomData data) => ws.sink.add(
+        jsonEncode({
+          'type': ServerStateType.roomData,
+          'payload': data.toJson(),
+        }),
+      );
 }

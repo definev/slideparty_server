@@ -161,8 +161,10 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
               print('Remove room $roomCode');
             } else {
               controller.data = controller.data.copyWith(
-                  players: {...controller.data.players}..remove(userId));
+                players: {...controller.data.players}..remove(userId),
+              );
               controller.updateState(controller.data);
+              controller.fireState(ws, controller.data);
               print('Remove player $userId from room $roomCode');
             }
             playerSub.cancel();
