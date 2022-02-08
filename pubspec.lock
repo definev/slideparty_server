@@ -265,7 +265,7 @@ packages:
     description:
       path: "."
       ref: main
-      resolved-ref: "4be26ec1428ba8185006eb00b4b7ea1464dbeda3"
+      resolved-ref: b5c721e53ffdf86bf07d37d15aeac9d70b0c8976
       url: "https://github.com/definev/slideparty_socket.git"
     source: git
     version: "1.0.0"

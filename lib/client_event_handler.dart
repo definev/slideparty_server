@@ -90,12 +90,23 @@ class ClientEventHandler {
           '\n | To player ${payload.affectedPlayerId}',
         );
         var players = {...controller.data.players};
-        players[payload.affectedPlayerId] =
-            controller.data.players[payload.affectedPlayerId]!.copyWith(
+        players[payload.affectedPlayerId] = controller //
+            .data
+            .players[payload.affectedPlayerId]!
+            .copyWith(
           affectedActions: {
             ...controller
-                .data.players[payload.affectedPlayerId]!.affectedActions,
-            playerId: payload.action,
+                .data //
+                .players[payload.affectedPlayerId]!
+                .affectedActions,
+            playerId: [
+              ...controller
+                      .data //
+                      .players[payload.affectedPlayerId]!
+                      .affectedActions[playerId] ??
+                  [],
+              payload.action,
+            ],
           },
         );
         players[playerId] = controller.data.players[playerId]!.copyWith(
