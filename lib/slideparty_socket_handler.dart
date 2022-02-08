@@ -130,32 +130,32 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
                     );
                     controller.data = oldData.copyWith(players: players);
                     controller.fireState(ws);
-                    Future.delayed(
-                      const Duration(seconds: 10),
-                      () {
-                        print(
-                          'Remove action ${payload.action}'
-                          '\n | From player $playerId'
-                          '\n | To player ${payload.affectedPlayerId}',
-                        );
-                        final oldData = controller.data;
-                        final players = oldData.players;
-                        players[payload.affectedPlayerId] =
-                            players[payload.affectedPlayerId]!.copyWith(
-                          affectedActions: {
-                            ...players[payload.affectedPlayerId]!
-                                .affectedActions,
-                          }..removeWhere(
-                              (key, value) =>
-                                  key == playerId && value == payload.action,
-                            ),
-                        );
-                        controller.data =
-                            controller.data.copyWith(players: players);
-                        controller.fireState(ws);
-                        return;
-                      },
-                    );
+                  // Future.delayed(
+                  //   const Duration(seconds: 10),
+                  //   () {
+                  //     print(
+                  //       'Remove action ${payload.action}'
+                  //       '\n | From player $playerId'
+                  //       '\n | To player ${payload.affectedPlayerId}',
+                  //     );
+                  //     final oldData = controller.data;
+                  //     final players = oldData.players;
+                  //     players[payload.affectedPlayerId] =
+                  //         players[payload.affectedPlayerId]!.copyWith(
+                  //       affectedActions: {
+                  //         ...players[payload.affectedPlayerId]!
+                  //             .affectedActions,
+                  //       }..removeWhere(
+                  //           (key, value) =>
+                  //               key == playerId && value == payload.action,
+                  //         ),
+                  //     );
+                  //     controller.data =
+                  //         controller.data.copyWith(players: players);
+                  //     controller.fireState(ws);
+                  //     return;
+                  //   },
+                  // );
                 }
                 break;
               default:
