@@ -44,15 +44,17 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
           (newData) => controller.fireState(ws, newData),
         );
 
-        ws.stream.map((raw) {
-          try {
-            return jsonDecode(raw);
-          } catch (e) {
-            print('Error event in room $roomCode: $e');
-            print('Raw: $raw');
-            return null;
-          }
-        }).listen(
+        ws.stream.map(
+          (raw) {
+            try {
+              return jsonDecode(raw);
+            } catch (e) {
+              print('Error event in room $roomCode: $e');
+              print('Raw: $raw');
+              return null;
+            }
+          },
+        ).listen(
           (event) async {
             if (event == null) return;
 
@@ -152,6 +154,7 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
 
             controller.updateState(controller.data);
           },
+          onError: (e) => print('Error event in room $roomCode: $e'),
           onDone: () {
             if (controller.data.players.length == 1) {
               roomStreamControllers.remove(roomCode);
