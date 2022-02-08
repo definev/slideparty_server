@@ -113,7 +113,7 @@ class ClientEventHandler {
               '\n | From player $playerId'
               '\n | To player ${payload.affectedPlayerId}',
             );
-            var players = controller.data.players;
+            var players = {...controller.data.players};
             players[payload.affectedPlayerId] =
                 controller.data.players[payload.affectedPlayerId]!.copyWith(
               affectedActions: {
