@@ -47,6 +47,8 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
           websocket: websocket,
         );
 
+        final listenSocket = handler.listenRoomData();
+
         ws.stream.map(
           (raw) {
             try {
@@ -80,6 +82,7 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
             } else {
               handler.onLeaveRoom();
             }
+            listenSocket.cancel();
           },
           cancelOnError: false,
         );

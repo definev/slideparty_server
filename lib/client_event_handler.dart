@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:slideparty_socket/slideparty_socket_be.dart';
@@ -16,6 +17,10 @@ class ClientEventHandler {
   final WebSocketChannel websocket;
   final RoomInfo info;
   late final String playerId;
+
+  StreamSubscription listenRoomData() => controller.listen(
+        (newData) => controller.fireState(websocket, newData),
+      );
 
   void onJoinRoom(dynamic json) {
     final payload = JoinRoom.fromJson(json);
@@ -55,8 +60,6 @@ class ClientEventHandler {
         },
       );
     }
-
-    controller.fireState(websocket);
   }
 
   void onSendAction(dynamic json) {
@@ -89,7 +92,6 @@ class ClientEventHandler {
           usedActions: [...players[playerId]!.usedActions, payload.action],
         );
         controller.data = controller.data.copyWith(players: players);
-        controller.fireState(websocket);
         break;
       // Future.delayed(
       //   const Duration(seconds: 10),
@@ -118,15 +120,13 @@ class ClientEventHandler {
       //   },
       // );
     }
-    controller.fireState(websocket);
   }
 
   void onLeaveRoom() {
+    print('Remove player $playerId from room ${info.roomCode}');
     controller.data = controller.data.copyWith(
       players: {...controller.data.players}..remove(playerId),
     );
-    controller.fireState(websocket);
-    print('Remove player $playerId from room ${info.roomCode}');
   }
 
   void onDeleteRoom() {
