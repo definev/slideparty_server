@@ -37,13 +37,19 @@ class ClientEventHandler {
   void onSendBoard(dynamic json) {
     final payload = SendBoard.fromJson(json);
     if (controller.data.players[playerId] == null) {
+      final playerColors = PlayerColors.values;
+      final existedPlayerColors =
+          controller.data.players.entries.map((e) => e.value.color);
+      playerColors.removeWhere(
+        (element) => existedPlayerColors.contains(element),
+      );
       controller.data = controller.data.copyWith(
         players: {
           ...controller.data.players,
           playerId: PlayerData(
             id: playerId,
             affectedActions: {},
-            color: PlayerColors.values[controller.data.players.length],
+            color: playerColors[0],
             currentBoard: payload.board,
             usedActions: [],
           ),
