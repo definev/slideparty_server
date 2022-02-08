@@ -9,13 +9,13 @@ Map<String, RoomStreamController> roomStreamControllers = {};
 class RoomStreamController {
   final StreamController<RoomData> _controller = StreamController.broadcast();
   RoomStreamController(String roomCode)
-      : data = RoomData(code: roomCode, players: {});
+      : _data = RoomData(code: roomCode, players: {});
 
-  RoomData data;
-
-  void updateState(RoomData newData) {
-    data = newData;
-    _controller.sink.add(newData);
+  RoomData _data;
+  RoomData get data => _data;
+  set data(RoomData data) {
+    _data = data;
+    _controller.add(data);
   }
 
   StreamSubscription listen(void Function(RoomData data) onListen) =>

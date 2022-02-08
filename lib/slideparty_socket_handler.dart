@@ -110,7 +110,6 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
                     );
                     controller.data =
                         controller.data.copyWith(players: players);
-                    controller.updateState(controller.data);
                     return;
                   default:
                     players[payload.affectedPlayerId] =
@@ -144,7 +143,6 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
                         );
                         controller.data =
                             controller.data.copyWith(players: players);
-                        controller.updateState(controller.data);
                         return;
                       },
                     );
@@ -152,8 +150,6 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
                 break;
               default:
             }
-
-            controller.updateState(controller.data);
           },
           onError: (e) => print('Error event in room $roomCode: $e'),
           onDone: () {
@@ -164,7 +160,6 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
               controller.data = controller.data.copyWith(
                 players: {...controller.data.players}..remove(userId),
               );
-              controller.updateState(controller.data);
               controller.fireState(ws, controller.data);
               print('Remove player $userId from room $roomCode');
             }
