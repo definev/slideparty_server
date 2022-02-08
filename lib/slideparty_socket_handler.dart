@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
+import 'package:slideparty_server/client_event_handler.dart';
 import 'package:slideparty_server/room_stream_controller.dart';
 import 'package:slideparty_socket/slideparty_socket_be.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -30,8 +31,8 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
           return;
         }
         print('New connection for $roomCode');
+
         RoomStreamController controller;
-        late String playerId;
 
         if (!roomStreamControllers.containsKey(roomCode)) {
           controller = RoomStreamController(roomCode);
@@ -39,6 +40,12 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
         } else {
           controller = roomStreamControllers[roomCode]!;
         }
+
+        final handler = ClientEventHandler(
+          info: RoomInfo(size, roomCode),
+          controller: controller,
+          websocket: websocket,
+        );
 
         ws.stream.map(
           (raw) {
@@ -56,123 +63,22 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
 
             switch (event['type']) {
               case ClientEventType.joinRoom:
-                final payload = JoinRoom.fromJson(event['payload']);
-                playerId = payload.userId;
-                if (controller.data.players.length == 4) {
-                  print('Error: Room $roomCode is full');
-                  ws.sink.add(jsonEncode({'type': ServerStateType.roomFull}));
-                  return;
-                }
-                print('User $playerId joined room $roomCode');
-                ws.sink.add(jsonEncode({'type': ServerStateType.connected}));
-                return;
+                handler.onJoinRoom(event['payload']);
+                break;
               case ClientEventType.sendBoard:
-                final payload = SendBoard.fromJson(event['payload']);
-                final oldPlayerData = controller.data.players[playerId];
-                if (oldPlayerData == null) {
-                  controller.data = controller.data.copyWith(
-                    players: {
-                      ...controller.data.players,
-                      playerId: PlayerData(
-                        id: playerId,
-                        affectedActions: {},
-                        color:
-                            PlayerColors.values[controller.data.players.length],
-                        currentBoard: payload.board,
-                        usedActions: [],
-                      ),
-                    },
-                  );
-                  controller.fireState(ws);
-                } else {
-                  controller.data = controller.data.copyWith(
-                    players: {
-                      ...controller.data.players,
-                      playerId:
-                          oldPlayerData.copyWith(currentBoard: payload.board),
-                    },
-                  );
-                  controller.fireState(ws);
-                }
+                handler.onSendBoard(event['payload']);
                 break;
               case ClientEventType.sendAction:
-                final payload = SendAction.fromJson(event['payload']);
-                final oldData = controller.data;
-                final players = oldData.players;
-
-                switch (payload.action) {
-                  case SlidepartyActions.clear:
-                    players[payload.affectedPlayerId] =
-                        players[payload.affectedPlayerId]!.copyWith(
-                      affectedActions: {},
-                    );
-                    controller.data =
-                        controller.data.copyWith(players: players);
-                    controller.fireState(ws);
-                    return;
-                  default:
-                    print(
-                      'Action ${payload.action}'
-                      '\n | From player $playerId'
-                      '\n | To player ${payload.affectedPlayerId}',
-                    );
-                    players[payload.affectedPlayerId] =
-                        players[payload.affectedPlayerId]!.copyWith(
-                      affectedActions: {
-                        ...players[payload.affectedPlayerId]!.affectedActions,
-                        playerId: payload.action,
-                      },
-                    );
-                    players[playerId] = players[playerId]!.copyWith(
-                      usedActions: [
-                        ...players[playerId]!.usedActions,
-                        payload.action,
-                      ],
-                    );
-                    controller.data = oldData.copyWith(players: players);
-                    controller.fireState(ws);
-                  // Future.delayed(
-                  //   const Duration(seconds: 10),
-                  //   () {
-                  //     print(
-                  //       'Remove action ${payload.action}'
-                  //       '\n | From player $playerId'
-                  //       '\n | To player ${payload.affectedPlayerId}',
-                  //     );
-                  //     final oldData = controller.data;
-                  //     final players = oldData.players;
-                  //     players[payload.affectedPlayerId] =
-                  //         players[payload.affectedPlayerId]!.copyWith(
-                  //       affectedActions: {
-                  //         ...players[payload.affectedPlayerId]!
-                  //             .affectedActions,
-                  //       }..removeWhere(
-                  //           (key, value) =>
-                  //               key == playerId && value == payload.action,
-                  //         ),
-                  //     );
-                  //     controller.data =
-                  //         controller.data.copyWith(players: players);
-                  //     controller.fireState(ws);
-                  //     return;
-                  //   },
-                  // );
-                }
+                handler.onSendAction(event['payload']);
                 break;
-              default:
             }
           },
           onError: (e) => print('Error event in room $roomCode: $e'),
           onDone: () {
             if (controller.data.players.length == 1) {
-              roomStreamControllers.remove(roomCode);
-              print('Remove room $roomCode');
+              handler.onDeleteRoom();
             } else {
-              controller.data = controller.data.copyWith(
-                players: {...controller.data.players}..remove(playerId),
-              );
-              controller.fireState(ws);
-              print('Remove player $playerId from room $roomCode');
+              handler.onLeaveRoom();
             }
           },
           cancelOnError: false,
