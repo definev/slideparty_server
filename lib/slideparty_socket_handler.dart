@@ -65,7 +65,6 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
                 }
                 print('User $playerId joined room $roomCode');
                 ws.sink.add(jsonEncode({'type': ServerStateType.connected}));
-                controller.fireState(ws);
                 return;
               case ClientEventType.sendBoard:
                 final payload = SendBoard.fromJson(event['payload']);
@@ -84,6 +83,7 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
                       ),
                     },
                   );
+                  controller.fireState(ws);
                 } else {
                   controller.data = controller.data.copyWith(
                     players: {
@@ -92,8 +92,8 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
                           oldPlayerData.copyWith(currentBoard: payload.board),
                     },
                   );
+                  controller.fireState(ws);
                 }
-                controller.fireState(ws);
                 break;
               case ClientEventType.sendAction:
                 final payload = SendAction.fromJson(event['payload']);
