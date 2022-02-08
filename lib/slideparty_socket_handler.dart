@@ -78,6 +78,7 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
                     players: {
                       ...controller.data.players,
                       userId: PlayerData(
+                        id: userId,
                         affectedActions: {},
                         color:
                             PlayerColors.values[controller.data.players.length],
