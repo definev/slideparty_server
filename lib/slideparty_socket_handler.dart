@@ -31,7 +31,7 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
         }
         print('New connection for $roomCode');
         RoomStreamController controller;
-        late String userId;
+        late String playerId;
 
         if (!roomStreamControllers.containsKey(roomCode)) {
           controller = RoomStreamController(roomCode);
@@ -39,10 +39,6 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
         } else {
           controller = roomStreamControllers[roomCode]!;
         }
-
-        final playerSub = controller.listen(
-          (newData) => controller.fireState(ws, newData),
-        );
 
         ws.stream.map(
           (raw) {
@@ -61,24 +57,24 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
             switch (event['type']) {
               case ClientEventType.joinRoom:
                 final payload = JoinRoom.fromJson(event['payload']);
-                userId = payload.userId;
+                playerId = payload.userId;
                 if (controller.data.players.length == 4) {
                   print('Error: Room $roomCode is full');
                   ws.sink.add(jsonEncode({'type': ServerStateType.roomFull}));
                   return;
                 }
-                print('User $userId joined room $roomCode');
+                print('User $playerId joined room $roomCode');
                 ws.sink.add(jsonEncode({'type': ServerStateType.connected}));
                 return;
               case ClientEventType.sendBoard:
                 final payload = SendBoard.fromJson(event['payload']);
-                final oldPlayerData = controller.data.players[userId];
+                final oldPlayerData = controller.data.players[playerId];
                 if (oldPlayerData == null) {
                   controller.data = controller.data.copyWith(
                     players: {
                       ...controller.data.players,
-                      userId: PlayerData(
-                        id: userId,
+                      playerId: PlayerData(
+                        id: playerId,
                         affectedActions: {},
                         color:
                             PlayerColors.values[controller.data.players.length],
@@ -91,11 +87,12 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
                   controller.data = controller.data.copyWith(
                     players: {
                       ...controller.data.players,
-                      userId:
+                      playerId:
                           oldPlayerData.copyWith(currentBoard: payload.board),
                     },
                   );
                 }
+                controller.fireState(ws);
                 break;
               case ClientEventType.sendAction:
                 final payload = SendAction.fromJson(event['payload']);
@@ -110,25 +107,37 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
                     );
                     controller.data =
                         controller.data.copyWith(players: players);
+                    controller.fireState(ws);
                     return;
                   default:
+                    print(
+                      'Action ${payload.action}'
+                      '\n | From player $playerId'
+                      '\n | To player ${payload.affectedPlayerId}',
+                    );
                     players[payload.affectedPlayerId] =
                         players[payload.affectedPlayerId]!.copyWith(
                       affectedActions: {
                         ...players[payload.affectedPlayerId]!.affectedActions,
-                        userId: payload.action,
+                        playerId: payload.action,
                       },
                     );
-                    players[userId] = players[userId]!.copyWith(
+                    players[playerId] = players[playerId]!.copyWith(
                       usedActions: [
-                        ...players[userId]!.usedActions,
+                        ...players[playerId]!.usedActions,
                         payload.action,
                       ],
                     );
                     controller.data = oldData.copyWith(players: players);
+                    controller.fireState(ws);
                     Future.delayed(
                       const Duration(seconds: 10),
                       () {
+                        print(
+                          'Remove action ${payload.action}'
+                          '\n | From player $playerId'
+                          '\n | To player ${payload.affectedPlayerId}',
+                        );
                         final oldData = controller.data;
                         final players = oldData.players;
                         players[payload.affectedPlayerId] =
@@ -138,11 +147,12 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
                                 .affectedActions,
                           }..removeWhere(
                               (key, value) =>
-                                  key == userId && value == payload.action,
+                                  key == playerId && value == payload.action,
                             ),
                         );
                         controller.data =
                             controller.data.copyWith(players: players);
+                        controller.fireState(ws);
                         return;
                       },
                     );
@@ -158,12 +168,11 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
               print('Remove room $roomCode');
             } else {
               controller.data = controller.data.copyWith(
-                players: {...controller.data.players}..remove(userId),
+                players: {...controller.data.players}..remove(playerId),
               );
-              controller.fireState(ws, controller.data);
-              print('Remove player $userId from room $roomCode');
+              controller.fireState(ws);
+              print('Remove player $playerId from room $roomCode');
             }
-            playerSub.cancel();
           },
           cancelOnError: false,
         );
