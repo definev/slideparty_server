@@ -37,7 +37,7 @@ class ClientEventHandler {
   void onSendBoard(dynamic json) {
     final payload = SendBoard.fromJson(json);
     if (controller.data.players[playerId] == null) {
-      final playerColors = PlayerColors.values;
+      var playerColors = PlayerColors.values;
       final existedPlayerColors =
           controller.data.players.entries.map((e) => e.value.color);
       playerColors.removeWhere(
