@@ -82,43 +82,43 @@ class ClientEventHandler {
         );
         final players = controller.data.players;
         players[payload.affectedPlayerId] =
-            players[payload.affectedPlayerId]!.copyWith(
+            controller.data.players[payload.affectedPlayerId]!.copyWith(
           affectedActions: {
-            ...players[payload.affectedPlayerId]!.affectedActions,
+            ...controller
+                .data.players[payload.affectedPlayerId]!.affectedActions,
             playerId: payload.action,
           },
         );
-        players[playerId] = players[playerId]!.copyWith(
-          usedActions: [...players[playerId]!.usedActions, payload.action],
+        players[playerId] = controller.data.players[playerId]!.copyWith(
+          usedActions: [
+            ...controller.data.players[playerId]!.usedActions,
+            payload.action,
+          ],
         );
+        print(players.toString());
         controller.data = controller.data.copyWith(players: players);
-        break;
-      // Future.delayed(
-      //   const Duration(seconds: 10),
-      //   () {
-      //     print(
-      //       'Remove action ${payload.action}'
-      //       '\n | From player $playerId'
-      //       '\n | To player ${payload.affectedPlayerId}',
-      //     );
-      //     final oldData = controller.data;
-      //     final players = oldData.players;
-      //     players[payload.affectedPlayerId] =
-      //         players[payload.affectedPlayerId]!.copyWith(
-      //       affectedActions: {
-      //         ...players[payload.affectedPlayerId]!
-      //             .affectedActions,
-      //       }..removeWhere(
-      //           (key, value) =>
-      //               key == playerId && value == payload.action,
-      //         ),
-      //     );
-      //     controller.data =
-      //         controller.data.copyWith(players: players);
-      //     controller.fireState(websocket);
-      //     return;
-      //   },
-      // );
+        Future.delayed(
+          const Duration(seconds: 10),
+          () {
+            print(
+              'Remove action ${payload.action}'
+              '\n | From player $playerId'
+              '\n | To player ${payload.affectedPlayerId}',
+            );
+            final players = controller.data.players;
+            players[payload.affectedPlayerId] =
+                controller.data.players[payload.affectedPlayerId]!.copyWith(
+              affectedActions: {
+                ...controller
+                    .data.players[payload.affectedPlayerId]!.affectedActions,
+              }..removeWhere(
+                  (key, value) => key == playerId && value == payload.action,
+                ),
+            );
+            controller.data = controller.data.copyWith(players: players);
+            return;
+          },
+        );
     }
   }
 
