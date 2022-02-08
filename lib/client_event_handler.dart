@@ -73,10 +73,13 @@ class ClientEventHandler {
 
     switch (payload.action) {
       case SlidepartyActions.clear:
-        final players = controller.data.players;
-        players[playerId] = players[playerId]!.copyWith(
+        var players = {...controller.data.players};
+        players[playerId] = controller.data.players[playerId]!.copyWith(
           affectedActions: {},
-          usedActions: [...players[playerId]!.usedActions, payload.action],
+          usedActions: [
+            ...controller.data.players[playerId]!.usedActions,
+            payload.action,
+          ],
         );
         controller.data = controller.data.copyWith(players: players);
         break;
@@ -86,7 +89,7 @@ class ClientEventHandler {
           '\n | From player $playerId'
           '\n | To player ${payload.affectedPlayerId}',
         );
-        final players = controller.data.players;
+        var players = {...controller.data.players};
         players[payload.affectedPlayerId] =
             controller.data.players[payload.affectedPlayerId]!.copyWith(
           affectedActions: {
@@ -101,7 +104,6 @@ class ClientEventHandler {
             payload.action,
           ],
         );
-        print(players.toString());
         controller.data = controller.data.copyWith(players: players);
         Future.delayed(
           const Duration(seconds: 10),
