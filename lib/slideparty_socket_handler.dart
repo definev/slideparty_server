@@ -65,6 +65,7 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
                 }
                 print('User $playerId joined room $roomCode');
                 ws.sink.add(jsonEncode({'type': ServerStateType.connected}));
+                controller.fireState(ws);
                 return;
               case ClientEventType.sendBoard:
                 final payload = SendBoard.fromJson(event['payload']);
