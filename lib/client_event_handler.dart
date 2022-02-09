@@ -21,14 +21,10 @@ class ClientEventHandler {
   StreamSubscription listenRoomData() {
     return controller.listen(
       (newData) {
-        if (newData.players.values
-            .where((element) => element.currentBoard.remainTile == 0)
-            .isNotEmpty) {
-          final winnerPlayer = newData //
-              .players
-              .values
-              .where((element) => element.currentBoard.remainTile == 0)
-              .first;
+        final winner = newData.players.values
+            .where((element) => element.currentBoard.remainTile == 0);
+        if (winner.isNotEmpty) {
+          final winnerPlayer = winner.first;
 
           timerRoom['R:${info.roomCode}S:${info.boardSize}']!.stop();
 
@@ -36,7 +32,7 @@ class ClientEventHandler {
             jsonEncode({
               'type': ServerStateType.endGame,
               'payload': EndGame(
-                winnerPlayer.id,
+                winnerPlayer,
                 timerRoom['R:${info.roomCode}S:${info.boardSize}']!.elapsed,
                 [
                   ...newData.players.entries.map(
@@ -185,7 +181,7 @@ class ClientEventHandler {
     websocket.sink.add(jsonEncode({
       'type': ServerStateType.endGame,
       'payload': EndGame(
-        payload.playerId,
+        controller.data.players[payload.playerId]!,
         timerRoom['R:${info.roomCode}S:${info.boardSize}']!.elapsed,
         [
           ...controller.data.players.entries.map(
