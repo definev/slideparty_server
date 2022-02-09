@@ -26,14 +26,15 @@ class ClientEventHandler {
         if (winner.isNotEmpty) {
           final winnerPlayer = winner.first;
 
-          timerRoom['R:${info.roomCode}S:${info.boardSize}']!.stop();
+          timerRoom['R:${info.roomCode}S:${info.boardSize}']?.stop();
 
           websocket.sink.add(
             jsonEncode({
               'type': ServerStateType.endGame,
               'payload': EndGame(
                 winnerPlayer,
-                timerRoom['R:${info.roomCode}S:${info.boardSize}']!.elapsed,
+                timerRoom['R:${info.roomCode}S:${info.boardSize}']?.elapsed ??
+                    Duration(),
                 [
                   ...newData.players.entries.map(
                     (e) => PlayerStatsAnalysis.data(
@@ -194,7 +195,6 @@ class ClientEventHandler {
         ],
       ).toJson(),
     }));
-    timerRoom.remove('R:${info.roomCode}S:${info.boardSize}');
   }
 
   void onLeaveRoom() {
@@ -205,7 +205,7 @@ class ClientEventHandler {
   }
 
   void onDeleteRoom() {
-    timerRoom['R:${info.roomCode}S:${info.boardSize}']!.stop();
+    timerRoom['R:${info.roomCode}S:${info.boardSize}']?.stop();
     timerRoom.remove('R:${info.roomCode}S:${info.boardSize}');
     roomStreamControllers.remove(info.roomCode);
     print('Remove room ${info.roomCode}');
