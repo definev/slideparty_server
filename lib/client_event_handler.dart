@@ -182,7 +182,6 @@ class ClientEventHandler {
   void onSolved(dynamic json) {
     final payload = Solved.fromJson(json);
     timerRoom['R:${info.roomCode}S:${info.boardSize}']!.stop();
-    timerRoom.remove('R:${info.roomCode}S:${info.boardSize}');
     websocket.sink.add(jsonEncode({
       'type': ServerStateType.endGame,
       'payload': EndGame(
@@ -199,6 +198,7 @@ class ClientEventHandler {
         ],
       ).toJson(),
     }));
+    timerRoom.remove('R:${info.roomCode}S:${info.boardSize}');
   }
 
   void onLeaveRoom() {
