@@ -69,6 +69,9 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
             if (event == null) return;
 
             switch (event['type']) {
+              case ClientEventType.solved:
+                handler.onSolved(event['payload']);
+                break;
               case ClientEventType.joinRoom:
                 handler.onJoinRoom(event['payload']);
                 break;
