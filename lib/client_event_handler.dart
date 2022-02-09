@@ -18,9 +18,44 @@ class ClientEventHandler {
   final RoomInfo info;
   late final String playerId;
 
-  StreamSubscription listenRoomData() => controller.listen(
-        (newData) => controller.fireState(websocket, newData),
-      );
+  StreamSubscription listenRoomData() {
+    return controller.listen(
+      (newData) {
+        if (newData.players.values
+            .where((element) => element.currentBoard.remainTile == 0)
+            .isNotEmpty) {
+          final winnerPlayer = newData //
+              .players
+              .values
+              .where((element) => element.currentBoard.remainTile == 0)
+              .first;
+
+          timerRoom['R:${info.roomCode}S:${info.boardSize}']!.stop();
+
+          websocket.sink.add(
+            jsonEncode({
+              'type': ServerStateType.endGame,
+              'payload': EndGame(
+                winnerPlayer.id,
+                timerRoom['R:${info.roomCode}S:${info.boardSize}']!.elapsed,
+                [
+                  ...newData.players.entries.map(
+                    (e) => PlayerStatsAnalysis.data(
+                      playerColor: e.value.color,
+                      remainTile: e.value.currentBoard.remainTile,
+                      totalTile: e.value.currentBoard.length,
+                    ),
+                  ),
+                ],
+              ).toJson(),
+            }),
+          );
+          return;
+        }
+        controller.fireState(websocket, newData);
+      },
+    );
+  }
 
   void onJoinRoom(dynamic json) {
     final payload = JoinRoom.fromJson(json);
