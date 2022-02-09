@@ -5,6 +5,7 @@ import 'package:slideparty_socket/slideparty_socket_be.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 Map<String, RoomStreamController> roomStreamControllers = {};
+Map<String, Stopwatch?> timerRoom = {};
 
 class RoomStreamController {
   final StreamController<RoomData> _controller = StreamController.broadcast();

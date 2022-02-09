@@ -144,6 +144,28 @@ class ClientEventHandler {
     }
   }
 
+  void onSolved(dynamic json) {
+    final payload = Solved.fromJson(json);
+    timerRoom['R:${info.roomCode}S:${info.boardSize}']!.stop();
+    timerRoom.remove('R:${info.roomCode}S:${info.boardSize}');
+    websocket.sink.add(jsonEncode({
+      'type': ServerStateType.endGame,
+      'payload': EndGame(
+        payload.playerId,
+        timerRoom['R:${info.roomCode}S:${info.boardSize}']!.elapsed,
+        [
+          ...controller.data.players.entries.map(
+            (e) => PlayerStatsAnalysis.data(
+              playerColor: e.value.color,
+              remainTile: e.value.currentBoard.remainTile,
+              totalTile: e.value.currentBoard.length,
+            ),
+          ),
+        ],
+      ).toJson(),
+    }));
+  }
+
   void onLeaveRoom() {
     print('Remove player $playerId from room ${info.roomCode}');
     controller.data = controller.data.copyWith(
@@ -152,7 +174,21 @@ class ClientEventHandler {
   }
 
   void onDeleteRoom() {
+    timerRoom['R:${info.roomCode}S:${info.boardSize}']!.stop();
+    timerRoom.remove('R:${info.roomCode}S:${info.boardSize}');
     roomStreamControllers.remove(info.roomCode);
     print('Remove room ${info.roomCode}');
+  }
+}
+
+extension _RemainTileExt on List<int> {
+  int get remainTile {
+    int remain = 0;
+    for (int i = 0; i < length; i++) {
+      if (this[i] != i) {
+        remain++;
+      }
+    }
+    return remain;
   }
 }
