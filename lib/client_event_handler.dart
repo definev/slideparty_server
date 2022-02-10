@@ -23,7 +23,18 @@ class ClientEventHandler {
           state.mapOrNull(
             connected: (value) => websocket.sink
                 .add(jsonEncode({'type': ServerStateType.connected})),
-            roomData: (newData) {
+            roomData: (data) {
+              var newData = data.copyWith();
+              final missedLeavePlayerId = [...newData.players.keys]
+                ..removeWhere((id) => controller.playersId.contains(id));
+
+              for (final id in missedLeavePlayerId) {
+                newData = data.copyWith(
+                  players: {...newData.players}
+                    ..removeWhere((key, value) => key == id),
+                );
+              }
+
               final winner = newData.players.values
                   .where((element) => element.currentBoard.remainTile == 0);
               if (winner.isNotEmpty) {
@@ -62,6 +73,7 @@ class ClientEventHandler {
       roomData: (data) {
         final payload = JoinRoom.fromJson(json);
         playerId = payload.userId;
+        controller.playersId = [...controller.playersId, playerId];
         if (data.players.length == 4) {
           print('Error: Room ${info.roomCode} is full');
           websocket.sink.add(jsonEncode({'type': ServerStateType.roomFull}));
@@ -202,44 +214,20 @@ class ClientEventHandler {
     );
   }
 
-  void onSolved(dynamic json) {
-    controller.data.mapOrNull(
-      roomData: (data) {
-        final payload = Solved.fromJson(json);
-        timerRoom[getId(info)]!.stop();
-        websocket.sink.add(jsonEncode({
-          'type': ServerStateType.endGame,
-          'payload': EndGame(
-            data.players[payload.playerId]!,
-            timerRoom[getId(info)]!.elapsed,
-            [
-              ...data.players.entries.map(
-                (e) => PlayerStatsAnalysis.data(
-                  playerColor: e.value.color,
-                  remainTile: e.value.currentBoard.remainTile,
-                  totalTile: e.value.currentBoard.length,
-                ),
-              ),
-            ],
-          ).toJson(),
-        }));
-      },
-    );
-  }
-
-  void onRestart() {
-    controller.data = Connected();
-  }
+  void onRestart() => controller.data = Connected();
 
   void onLeaveRoom() {
-    controller.data.mapOrNull(
-      roomData: (data) {
-        print('Remove player $playerId from room ${info.roomCode}');
-        controller.data = data.copyWith(
-          players: {...data.players}..remove(playerId),
-        );
-      },
-    );
+    controller.playersId = [...controller.playersId]..remove(playerId);
+    controller.data.mapOrNull(roomData: (data) {
+      print('Remove player $playerId from room ${info.roomCode}');
+      controller.data = data.copyWith(
+        players: {...data.players}..remove(playerId),
+      );
+    }, connected: (_) {
+      print(
+        'Disconnected while try reconnect: player $playerId from room ${info.roomCode}',
+      );
+    });
   }
 
   void onDeleteRoom() {

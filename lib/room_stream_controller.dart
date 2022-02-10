@@ -21,6 +21,8 @@ class RoomStreamController {
     _controller.add(data);
   }
 
+  List<String> playersId = [];
+
   StreamSubscription listen(void Function(ServerState data) onListen) =>
       _controller.stream.distinct().listen(onListen);
 
