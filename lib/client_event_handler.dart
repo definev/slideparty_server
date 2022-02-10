@@ -189,6 +189,7 @@ class ClientEventHandler {
                   '\n | From player $playerId'
                   '\n | To player ${payload.affectedPlayerId}',
                 );
+                if (data.players[payload.affectedPlayerId] == null) return;
                 var players = {...data.players};
                 players[payload.affectedPlayerId] =
                     data.players[payload.affectedPlayerId]!.copyWith(
