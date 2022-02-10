@@ -24,8 +24,11 @@ class ClientEventHandler {
             connected: (value) => websocket.sink
                 .add(jsonEncode({'type': ServerStateType.connected})),
             roomData: (data) {
-              if (data.players.isEmpty) return;
               var newData = data.copyWith();
+              if (newData.players.isEmpty) {
+                controller.fireState(websocket, newData);
+                return;
+              }
               final missedLeavePlayerId = [...newData.players.keys]
                 ..removeWhere((id) => controller.playersId.contains(id));
               print('PLAYER ID: ${controller.playersId}');
@@ -93,11 +96,17 @@ class ClientEventHandler {
 
     controller.data.mapOrNull(
       connected: (value) {
-        // var playerColors = [...PlayerColors.values];
-
         controller.data = RoomData(
           code: getId(info),
-          players: {},
+          players: {
+            playerId: PlayerData(
+              id: playerId,
+              affectedActions: {},
+              color: PlayerColors.values[0],
+              currentBoard: payload.board,
+              usedActions: [],
+            ),
+          },
         );
       },
       roomData: (data) {
