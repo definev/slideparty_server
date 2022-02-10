@@ -22,6 +22,8 @@ class ClientEventHandler {
     return controller.listen(
       (state) {
         state.mapOrNull(
+          connected: (value) => websocket.sink
+              .add(jsonEncode({'type': ServerStateType.connected})),
           roomData: (newData) {
             final winner = newData.players.values
                 .where((element) => element.currentBoard.remainTile == 0);
