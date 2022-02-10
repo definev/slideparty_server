@@ -27,6 +27,8 @@ class ClientEventHandler {
               var newData = data.copyWith();
               final missedLeavePlayerId = [...newData.players.keys]
                 ..removeWhere((id) => controller.playersId.contains(id));
+              print('PLAYER ID: ${controller.playersId}');
+              print('ROOMDATA ID: ${data.players.keys}');
 
               for (final id in missedLeavePlayerId) {
                 newData = data.copyWith(
