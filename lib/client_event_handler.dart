@@ -20,187 +20,210 @@ class ClientEventHandler {
 
   StreamSubscription listenRoomData() {
     return controller.listen(
-      (newData) {
-        final winner = newData.players.values
-            .where((element) => element.currentBoard.remainTile == 0);
-        if (winner.isNotEmpty) {
-          final winnerPlayer = winner.first;
+      (state) {
+        state.mapOrNull(
+          roomData: (newData) {
+            final winner = newData.players.values
+                .where((element) => element.currentBoard.remainTile == 0);
+            if (winner.isNotEmpty) {
+              final winnerPlayer = winner.first;
 
-          timerRoom['R:${info.roomCode}S:${info.boardSize}']?.stop();
+              timerRoom['R:${info.roomCode}S:${info.boardSize}']?.stop();
 
-          websocket.sink.add(
-            jsonEncode({
-              'type': ServerStateType.endGame,
-              'payload': EndGame(
-                winnerPlayer,
-                timerRoom['R:${info.roomCode}S:${info.boardSize}']?.elapsed ??
-                    Duration(),
-                [
-                  ...newData.players.entries.map(
-                    (e) => PlayerStatsAnalysis.data(
-                      playerColor: e.value.color,
-                      remainTile: e.value.currentBoard.remainTile,
-                      totalTile: e.value.currentBoard.length,
-                    ),
-                  ),
-                ],
-              ).toJson(),
-            }),
-          );
-          return;
-        }
-        controller.fireState(websocket, newData);
+              websocket.sink.add(
+                jsonEncode({
+                  'type': ServerStateType.endGame,
+                  'payload': EndGame(
+                    winnerPlayer,
+                    timerRoom['R:${info.roomCode}S:${info.boardSize}']
+                            ?.elapsed ??
+                        Duration(),
+                    [
+                      ...newData.players.entries.map(
+                        (e) => PlayerStatsAnalysis.data(
+                          playerColor: e.value.color,
+                          remainTile: e.value.currentBoard.remainTile,
+                          totalTile: e.value.currentBoard.length,
+                        ),
+                      ),
+                    ],
+                  ).toJson(),
+                }),
+              );
+              return;
+            }
+            controller.fireState(websocket, newData);
+          },
+        );
       },
     );
   }
 
   void onJoinRoom(dynamic json) {
-    final payload = JoinRoom.fromJson(json);
-    playerId = payload.userId;
-    if (controller.data.players.length == 4) {
-      print('Error: Room ${info.roomCode} is full');
-      websocket.sink.add(jsonEncode({'type': ServerStateType.roomFull}));
-      return;
-    }
-    print('Player $playerId joined room ${info.roomCode}');
-    websocket.sink.add(jsonEncode({'type': ServerStateType.connected}));
+    controller.data.mapOrNull(
+      roomData: (data) {
+        final payload = JoinRoom.fromJson(json);
+        playerId = payload.userId;
+        if (data.players.length == 4) {
+          print('Error: Room ${info.roomCode} is full');
+          websocket.sink.add(jsonEncode({'type': ServerStateType.roomFull}));
+          return;
+        }
+        print('Player $playerId joined room ${info.roomCode}');
+        websocket.sink.add(jsonEncode({'type': ServerStateType.connected}));
+      },
+    );
   }
 
   void onSendBoard(dynamic json) {
-    final payload = SendBoard.fromJson(json);
-    if (controller.data.players[playerId] == null) {
-      var playerColors = [...PlayerColors.values];
-      final existedPlayerColors =
-          controller.data.players.entries.map((e) => e.value.color);
-      playerColors.removeWhere(
-        (element) => existedPlayerColors.contains(element),
-      );
-      controller.data = controller.data.copyWith(
-        players: {
-          ...controller.data.players,
-          playerId: PlayerData(
-            id: playerId,
-            affectedActions: {},
-            color: playerColors[0],
-            currentBoard: payload.board,
-            usedActions: [],
-          ),
-        },
-      );
-    } else {
-      controller.data = controller.data.copyWith(
-        players: {
-          ...controller.data.players,
-          playerId: controller //
-              .data
-              .players[playerId]!
-              .copyWith(currentBoard: payload.board),
-        },
-      );
-    }
+    controller.data.mapOrNull(
+      roomData: (data) {
+        final payload = SendBoard.fromJson(json);
+        if (data.players[playerId] == null) {
+          var playerColors = [...PlayerColors.values];
+          final existedPlayerColors =
+              data.players.entries.map((e) => e.value.color);
+          playerColors.removeWhere(
+            (element) => existedPlayerColors.contains(element),
+          );
+          controller.data = data.copyWith(
+            players: {
+              ...data.players,
+              playerId: PlayerData(
+                id: playerId,
+                affectedActions: {},
+                color: playerColors[0],
+                currentBoard: payload.board,
+                usedActions: [],
+              ),
+            },
+          );
+        } else {
+          controller.data = data.copyWith(
+            players: {
+              ...data.players,
+              playerId:
+                  data.players[playerId]!.copyWith(currentBoard: payload.board),
+            },
+          );
+        }
+      },
+    );
   }
 
   void onSendAction(dynamic json) {
-    final payload = SendAction.fromJson(json);
+    controller.data.mapOrNull(
+      roomData: (data) {
+        final payload = SendAction.fromJson(json);
 
-    switch (payload.action) {
-      case SlidepartyActions.clear:
-        var players = {...controller.data.players};
-        players[playerId] = controller.data.players[playerId]!.copyWith(
-          affectedActions: {},
-          usedActions: [
-            ...controller.data.players[playerId]!.usedActions,
-            payload.action,
-          ],
-        );
-        controller.data = controller.data.copyWith(players: players);
-        break;
-      default:
-        print(
-          'Action ${payload.action}'
-          '\n | From player $playerId'
-          '\n | To player ${payload.affectedPlayerId}',
-        );
-        var players = {...controller.data.players};
-        players[payload.affectedPlayerId] = controller //
-            .data
-            .players[payload.affectedPlayerId]!
-            .copyWith(
-          affectedActions: {
-            ...controller
-                .data //
-                .players[payload.affectedPlayerId]!
-                .affectedActions,
-            playerId: [
-              ...controller
-                      .data //
-                      .players[payload.affectedPlayerId]!
-                      .affectedActions[playerId] ??
-                  [],
-              payload.action,
-            ],
-          },
-        );
-        players[playerId] = controller.data.players[playerId]!.copyWith(
-          usedActions: [
-            ...controller.data.players[playerId]!.usedActions,
-            payload.action,
-          ],
-        );
-        controller.data = controller.data.copyWith(players: players);
-        Future.delayed(
-          const Duration(seconds: 10),
-          () {
+        switch (payload.action) {
+          case SlidepartyActions.clear:
+            var players = {...data.players};
+            players[playerId] = data.players[playerId]!.copyWith(
+              affectedActions: {},
+              usedActions: [
+                ...data.players[playerId]!.usedActions,
+                payload.action,
+              ],
+            );
+            controller.data = data.copyWith(players: players);
+            break;
+          default:
             print(
-              'Remove action ${payload.action}'
+              'Action ${payload.action}'
               '\n | From player $playerId'
               '\n | To player ${payload.affectedPlayerId}',
             );
-            var players = {...controller.data.players};
-            players[payload.affectedPlayerId] =
-                controller.data.players[payload.affectedPlayerId]!.copyWith(
+            var players = {...data.players};
+            players[payload.affectedPlayerId] = data //
+                .players[payload.affectedPlayerId]!
+                .copyWith(
               affectedActions: {
-                ...controller
-                    .data.players[payload.affectedPlayerId]!.affectedActions,
+                ...data //
+                    .players[payload.affectedPlayerId]!
+                    .affectedActions,
                 playerId: [
-                  ...controller.data.players[payload.affectedPlayerId]!
-                      .affectedActions[playerId]!
-                    ..remove(payload.action),
+                  ...data //
+                          .players[payload.affectedPlayerId]!
+                          .affectedActions[playerId] ??
+                      [],
+                  payload.action,
                 ],
-              }..removeWhere((key, value) => value.isEmpty),
+              },
             );
-            controller.data = controller.data.copyWith(players: players);
-            return;
-          },
-        );
-    }
+            players[playerId] = data.players[playerId]!.copyWith(
+              usedActions: [
+                ...data.players[playerId]!.usedActions,
+                payload.action,
+              ],
+            );
+            controller.data = data.copyWith(players: players);
+            Future.delayed(
+              const Duration(seconds: 10),
+              () {
+                print(
+                  'Remove action ${payload.action}'
+                  '\n | From player $playerId'
+                  '\n | To player ${payload.affectedPlayerId}',
+                );
+                var players = {...data.players};
+                players[payload.affectedPlayerId] =
+                    data.players[payload.affectedPlayerId]!.copyWith(
+                  affectedActions: {
+                    ...data.players[payload.affectedPlayerId]!.affectedActions,
+                    playerId: [
+                      ...data.players[payload.affectedPlayerId]!
+                          .affectedActions[playerId]!
+                        ..remove(payload.action),
+                    ],
+                  }..removeWhere((key, value) => value.isEmpty),
+                );
+                controller.data = data.copyWith(players: players);
+                return;
+              },
+            );
+        }
+      },
+    );
   }
 
   void onSolved(dynamic json) {
-    final payload = Solved.fromJson(json);
-    timerRoom['R:${info.roomCode}S:${info.boardSize}']!.stop();
-    websocket.sink.add(jsonEncode({
-      'type': ServerStateType.endGame,
-      'payload': EndGame(
-        controller.data.players[payload.playerId]!,
-        timerRoom['R:${info.roomCode}S:${info.boardSize}']!.elapsed,
-        [
-          ...controller.data.players.entries.map(
-            (e) => PlayerStatsAnalysis.data(
-              playerColor: e.value.color,
-              remainTile: e.value.currentBoard.remainTile,
-              totalTile: e.value.currentBoard.length,
-            ),
-          ),
-        ],
-      ).toJson(),
-    }));
+    controller.data.mapOrNull(
+      roomData: (data) {
+        final payload = Solved.fromJson(json);
+        timerRoom['R:${info.roomCode}S:${info.boardSize}']!.stop();
+        websocket.sink.add(jsonEncode({
+          'type': ServerStateType.endGame,
+          'payload': EndGame(
+            data.players[payload.playerId]!,
+            timerRoom['R:${info.roomCode}S:${info.boardSize}']!.elapsed,
+            [
+              ...data.players.entries.map(
+                (e) => PlayerStatsAnalysis.data(
+                  playerColor: e.value.color,
+                  remainTile: e.value.currentBoard.remainTile,
+                  totalTile: e.value.currentBoard.length,
+                ),
+              ),
+            ],
+          ).toJson(),
+        }));
+      },
+    );
+  }
+
+  void onRestart() {
+    controller.data = Connected();
   }
 
   void onLeaveRoom() {
-    print('Remove player $playerId from room ${info.roomCode}');
-    controller.data = controller.data.copyWith(
-      players: {...controller.data.players}..remove(playerId),
+    controller.data.mapOrNull(
+      roomData: (data) {
+        print('Remove player $playerId from room ${info.roomCode}');
+        controller.data = data.copyWith(
+          players: {...data.players}..remove(playerId),
+        );
+      },
     );
   }
 

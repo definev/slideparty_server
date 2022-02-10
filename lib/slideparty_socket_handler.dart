@@ -72,6 +72,9 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
               case ClientEventType.solved:
                 handler.onSolved(event['payload']);
                 break;
+              case ClientEventType.restart:
+                handler.onRestart();
+                break;
               case ClientEventType.joinRoom:
                 handler.onJoinRoom(event['payload']);
                 break;
@@ -85,11 +88,15 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
           },
           onError: (e) => print('Error event in room $roomCode: $e'),
           onDone: () {
-            if (controller.data.players.length == 1) {
-              handler.onDeleteRoom();
-            } else {
-              handler.onLeaveRoom();
-            }
+            controller.data.mapOrNull(
+              roomData: (data) {
+                if (data.players.length == 1) {
+                  handler.onDeleteRoom();
+                } else {
+                  handler.onLeaveRoom();
+                }
+              },
+            );
             listenSocket.cancel();
           },
           cancelOnError: false,
