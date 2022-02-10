@@ -146,6 +146,10 @@ class ClientEventHandler {
         switch (payload.action) {
           case SlidepartyActions.clear:
             var players = {...data.players};
+            if (data.players[playerId] == null) {
+              onLeaveRoom();
+              return;
+            }
             players[playerId] = data.players[playerId]!.copyWith(
               affectedActions: {},
               usedActions: [
@@ -209,6 +213,7 @@ class ClientEventHandler {
                 return;
               },
             );
+            break;
         }
       },
     );
@@ -218,16 +223,19 @@ class ClientEventHandler {
 
   void onLeaveRoom() {
     controller.playersId = [...controller.playersId]..remove(playerId);
-    controller.data.mapOrNull(roomData: (data) {
-      print('Remove player $playerId from room ${info.roomCode}');
-      controller.data = data.copyWith(
-        players: {...data.players}..remove(playerId),
-      );
-    }, connected: (_) {
-      print(
-        'Disconnected while try reconnect: player $playerId from room ${info.roomCode}',
-      );
-    });
+    controller.data.mapOrNull(
+      roomData: (data) {
+        print('Remove player $playerId from room ${info.roomCode}');
+        controller.data = data.copyWith(
+          players: {...data.players}..remove(playerId),
+        );
+      },
+      connected: (_) {
+        print(
+          'Disconnected while try reconnect: player $playerId from room ${info.roomCode}',
+        );
+      },
+    );
   }
 
   void onDeleteRoom() {
