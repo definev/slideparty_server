@@ -30,16 +30,14 @@ class ClientEventHandler {
             if (winner.isNotEmpty) {
               final winnerPlayer = winner.first;
 
-              timerRoom['R:${info.roomCode}S:${info.boardSize}']?.stop();
+              timerRoom[getId(info)]?.stop();
 
               websocket.sink.add(
                 jsonEncode({
                   'type': ServerStateType.endGame,
                   'payload': EndGame(
                     winnerPlayer,
-                    timerRoom['R:${info.roomCode}S:${info.boardSize}']
-                            ?.elapsed ??
-                        Duration(),
+                    timerRoom[getId(info)]?.elapsed ?? Duration(),
                     [
                       ...newData.players.entries.map(
                         (e) => PlayerStatsAnalysis.data(
@@ -193,12 +191,12 @@ class ClientEventHandler {
     controller.data.mapOrNull(
       roomData: (data) {
         final payload = Solved.fromJson(json);
-        timerRoom['R:${info.roomCode}S:${info.boardSize}']!.stop();
+        timerRoom[getId(info)]!.stop();
         websocket.sink.add(jsonEncode({
           'type': ServerStateType.endGame,
           'payload': EndGame(
             data.players[payload.playerId]!,
-            timerRoom['R:${info.roomCode}S:${info.boardSize}']!.elapsed,
+            timerRoom[getId(info)]!.elapsed,
             [
               ...data.players.entries.map(
                 (e) => PlayerStatsAnalysis.data(
@@ -230,8 +228,8 @@ class ClientEventHandler {
   }
 
   void onDeleteRoom() {
-    timerRoom['R:${info.roomCode}S:${info.boardSize}']?.stop();
-    timerRoom.remove('R:${info.roomCode}S:${info.boardSize}');
+    timerRoom[getId(info)]?.stop();
+    timerRoom.remove(getId(info));
     roomStreamControllers.remove(info.roomCode);
     print('Remove room ${info.roomCode}');
   }
@@ -248,3 +246,5 @@ extension _RemainTileExt on List<int> {
     return remain;
   }
 }
+
+String getId(RoomInfo info) => '${info.roomCode}-${info.boardSize}';

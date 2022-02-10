@@ -30,20 +30,21 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
           }));
           return;
         }
+        final info = RoomInfo(size, roomCode);
         print('New connection for $roomCode');
 
         RoomStreamController controller;
 
-        if (!roomStreamControllers.containsKey(roomCode)) {
-          controller = RoomStreamController(roomCode);
-          roomStreamControllers[roomCode] = controller;
+        if (!roomStreamControllers.containsKey(getId(info))) {
+          controller = RoomStreamController(getId(info));
+          roomStreamControllers[getId(info)] = controller;
         } else {
-          controller = roomStreamControllers[roomCode]!;
+          controller = roomStreamControllers[getId(info)]!;
         }
 
-        if (!timerRoom.containsKey('R:${roomCode}S:$boardSize')) {
-          timerRoom['R:${roomCode}S:$boardSize'] = Stopwatch();
-          timerRoom['R:${roomCode}S:$boardSize']!.start();
+        if (!timerRoom.containsKey(getId(info))) {
+          timerRoom[getId(info)] = Stopwatch();
+          timerRoom[getId(info)]!.start();
         }
 
         final handler = ClientEventHandler(
@@ -88,9 +89,12 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
           },
           onError: (e) => print('Error event in room $roomCode: $e'),
           onDone: () {
-            controller.data.mapOrNull(
-              roomData: (data) {
-                if (data.players.length == 1) {
+            controller.data.maybeWhen(
+              orElse: () {
+                roomStreamControllers.remove(getId(info));
+              },
+              roomData: (_, players) {
+                if (players.length == 1) {
                   handler.onDeleteRoom();
                 } else {
                   handler.onLeaveRoom();
