@@ -24,6 +24,7 @@ class ClientEventHandler {
             connected: (value) => websocket.sink
                 .add(jsonEncode({'type': ServerStateType.connected})),
             roomData: (data) {
+              if (data.players.isEmpty) return;
               var newData = data.copyWith();
               final missedLeavePlayerId = [...newData.players.keys]
                 ..removeWhere((id) => controller.playersId.contains(id));
