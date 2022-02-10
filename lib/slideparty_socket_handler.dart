@@ -36,7 +36,7 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
         RoomStreamController controller;
 
         if (!roomStreamControllers.containsKey(getId(info))) {
-          controller = RoomStreamController(getId(info));
+          controller = RoomStreamController(info);
           roomStreamControllers[getId(info)] = controller;
         } else {
           controller = roomStreamControllers[getId(info)]!;

@@ -18,46 +18,44 @@ class ClientEventHandler {
   final RoomInfo info;
   late final String playerId;
 
-  StreamSubscription listenRoomData() {
-    return controller.listen(
-      (state) {
-        state.mapOrNull(
-          connected: (value) => websocket.sink
-              .add(jsonEncode({'type': ServerStateType.connected})),
-          roomData: (newData) {
-            final winner = newData.players.values
-                .where((element) => element.currentBoard.remainTile == 0);
-            if (winner.isNotEmpty) {
-              final winnerPlayer = winner.first;
+  StreamSubscription listenRoomData() => controller.listen(
+        (state) {
+          state.mapOrNull(
+            connected: (value) => websocket.sink
+                .add(jsonEncode({'type': ServerStateType.connected})),
+            roomData: (newData) {
+              final winner = newData.players.values
+                  .where((element) => element.currentBoard.remainTile == 0);
+              if (winner.isNotEmpty) {
+                final winnerPlayer = winner.first;
 
-              timerRoom[getId(info)]?.stop();
+                timerRoom[getId(info)]?.stop();
 
-              websocket.sink.add(
-                jsonEncode({
-                  'type': ServerStateType.endGame,
-                  'payload': EndGame(
-                    winnerPlayer,
-                    timerRoom[getId(info)]?.elapsed ?? Duration(),
-                    [
-                      ...newData.players.entries.map(
-                        (e) => PlayerStatsAnalysis.data(
-                          playerColor: e.value.color,
-                          remainTile: e.value.currentBoard.remainTile,
-                          totalTile: e.value.currentBoard.length,
+                websocket.sink.add(
+                  jsonEncode({
+                    'type': ServerStateType.endGame,
+                    'payload': EndGame(
+                      winnerPlayer,
+                      timerRoom[getId(info)]?.elapsed ?? Duration(),
+                      [
+                        ...newData.players.entries.map(
+                          (e) => PlayerStatsAnalysis.data(
+                            playerColor: e.value.color,
+                            remainTile: e.value.currentBoard.remainTile,
+                            totalTile: e.value.currentBoard.length,
+                          ),
                         ),
-                      ),
-                    ],
-                  ).toJson(),
-                }),
-              );
-              return;
-            }
-            controller.fireState(websocket, newData);
-          },
-        );
-      },
-    );
-  }
+                      ],
+                    ).toJson(),
+                  }),
+                );
+                return;
+              }
+              controller.fireState(websocket, newData);
+            },
+          );
+        },
+      );
 
   void onJoinRoom(dynamic json) {
     controller.data.mapOrNull(
@@ -76,9 +74,26 @@ class ClientEventHandler {
   }
 
   void onSendBoard(dynamic json) {
+    final payload = SendBoard.fromJson(json);
+
     controller.data.mapOrNull(
+      connected: (value) {
+        var playerColors = [...PlayerColors.values];
+
+        controller.data = RoomData(
+          code: getId(info),
+          players: {
+            playerId: PlayerData(
+              id: playerId,
+              affectedActions: {},
+              color: playerColors[0],
+              currentBoard: payload.board,
+              usedActions: [],
+            ),
+          },
+        );
+      },
       roomData: (data) {
-        final payload = SendBoard.fromJson(json);
         if (data.players[playerId] == null) {
           var playerColors = [...PlayerColors.values];
           final existedPlayerColors =

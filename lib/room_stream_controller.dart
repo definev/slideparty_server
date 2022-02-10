@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:slideparty_server/client_event_handler.dart';
 import 'package:slideparty_socket/slideparty_socket_be.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
@@ -10,8 +11,8 @@ Map<String, Stopwatch?> timerRoom = {};
 class RoomStreamController {
   final StreamController<ServerState> _controller =
       StreamController.broadcast();
-  RoomStreamController(String roomCode)
-      : _data = RoomData(code: roomCode, players: {});
+  RoomStreamController(RoomInfo info)
+      : _data = RoomData(code: getId(info), players: {});
 
   ServerState _data;
   ServerState get data => _data;
