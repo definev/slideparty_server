@@ -90,19 +90,11 @@ class ClientEventHandler {
 
     controller.data.mapOrNull(
       connected: (value) {
-        var playerColors = [...PlayerColors.values];
+        // var playerColors = [...PlayerColors.values];
 
         controller.data = RoomData(
           code: getId(info),
-          players: {
-            playerId: PlayerData(
-              id: playerId,
-              affectedActions: {},
-              color: playerColors[0],
-              currentBoard: payload.board,
-              usedActions: [],
-            ),
-          },
+          players: {},
         );
       },
       roomData: (data) {
