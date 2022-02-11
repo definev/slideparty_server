@@ -249,7 +249,7 @@ class ClientEventHandler {
   void onDeleteRoom() {
     timerRoom[getId(info)]?.stop();
     timerRoom.remove(getId(info));
-    roomStreamControllers.remove(info.roomCode);
+    roomStreamControllers.remove(getId(info));
     print('Remove room ${info.roomCode}');
   }
 }
