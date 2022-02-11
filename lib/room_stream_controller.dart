@@ -9,21 +9,18 @@ Map<String, RoomStreamController> roomStreamControllers = {};
 Map<String, Stopwatch?> timerRoom = {};
 
 class RoomStreamController {
-  final StreamController<ServerState> _controller =
-      StreamController.broadcast();
+  final StreamController<RoomData> _controller = StreamController.broadcast();
   RoomStreamController(RoomInfo info)
       : _data = RoomData(code: getId(info), players: {});
 
-  ServerState _data;
-  ServerState get data => _data;
-  set data(ServerState data) {
+  RoomData _data;
+  RoomData get data => _data;
+  set data(RoomData data) {
     _data = data;
     _controller.add(data);
   }
 
-  List<String> playersId = [];
-
-  StreamSubscription listen(void Function(ServerState data) onListen) =>
+  StreamSubscription listen(void Function(RoomData data) onListen) =>
       _controller.stream.distinct().listen(onListen);
 
   void fireState(WebSocketChannel ws, RoomData data) {

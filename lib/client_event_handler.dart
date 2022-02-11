@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:slideparty_playboard_utils/slideparty_playboard_utils.dart';
 import 'package:slideparty_socket/slideparty_socket_be.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
@@ -29,17 +30,7 @@ class ClientEventHandler {
                 controller.fireState(websocket, newData);
                 return;
               }
-              final missedLeavePlayerId = [...newData.players.keys]
-                ..removeWhere((id) => controller.playersId.contains(id));
-              print('PLAYER ID: ${controller.playersId}');
               print('ROOMDATA ID: ${data.players.keys}');
-
-              for (final id in missedLeavePlayerId) {
-                newData = data.copyWith(
-                  players: {...newData.players}
-                    ..removeWhere((key, value) => key == id),
-                );
-              }
 
               final winner = newData.players.values
                   .where((element) => element.currentBoard.remainTile == 0);
@@ -79,7 +70,6 @@ class ClientEventHandler {
       roomData: (data) {
         final payload = JoinRoom.fromJson(json);
         playerId = payload.userId;
-        controller.playersId = [...controller.playersId, playerId];
         if (data.players.length == 4) {
           print('Error: Room ${info.roomCode} is full');
           websocket.sink.add(jsonEncode({'type': ServerStateType.roomFull}));
@@ -224,10 +214,23 @@ class ClientEventHandler {
     );
   }
 
-  void onRestart() => controller.data = Connected();
+  void onRestart() {
+    controller.data.mapOrNull(
+      roomData: (data) {
+        final players = {
+          for (final player in data.players.entries)
+            player.key: player.value.copyWith(
+              currentBoard: Playboard.random(info.boardSize).currentBoard,
+              affectedActions: {},
+              usedActions: [],
+            ),
+        };
+        controller.data = data.copyWith(players: players);
+      },
+    );
+  }
 
   void onLeaveRoom() {
-    controller.playersId = [...controller.playersId]..remove(playerId);
     controller.data.mapOrNull(
       roomData: (data) {
         print('Remove player $playerId from room ${info.roomCode}');
