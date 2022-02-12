@@ -193,19 +193,25 @@ class ClientEventHandler {
               return;
             }
             var players = {...controller.data.players};
-            players[payload.affectedPlayerId] =
-                controller.data.players[payload.affectedPlayerId]!.copyWith(
-              affectedActions: {
-                ...controller
-                    .data.players[payload.affectedPlayerId]!.affectedActions,
-                playerId: [
-                  ...controller.data.players[payload.affectedPlayerId]!
-                      .affectedActions[playerId]!
-                    ..remove(payload.action),
-                ],
-              }..removeWhere((key, value) => value.isEmpty),
-            );
-            controller.data = controller.data.copyWith(players: players);
+            if (players[payload.affectedPlayerId] != null) {
+              if (players[payload.affectedPlayerId]!
+                      .affectedActions[playerId] ==
+                  null) {
+                return;
+              }
+              players[payload.affectedPlayerId] =
+                  controller.data.players[payload.affectedPlayerId]!.copyWith(
+                affectedActions: {
+                  ...players[payload.affectedPlayerId]!.affectedActions,
+                  playerId: [
+                    ...players[payload.affectedPlayerId]!
+                        .affectedActions[playerId]!
+                      ..remove(payload.action),
+                  ],
+                }..removeWhere((key, value) => value.isEmpty),
+              );
+              controller.data = controller.data.copyWith(players: players);
+            }
             return;
           },
         );
