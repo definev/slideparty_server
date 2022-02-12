@@ -53,7 +53,9 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
           websocket: websocket,
         );
 
-        final listenSocket = handler.listenRoomData();
+        final listenData = handler.listenRoomData();
+        final listenSocket =
+            handler.controller.listenWebSocketStream(websocket);
 
         ws.stream.map(
           (raw) {
@@ -86,6 +88,8 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
           },
           onError: (e) => print('Error event in room $roomCode: $e'),
           onDone: () {
+            listenSocket.cancel();
+            listenData.cancel();
             controller.data.maybeWhen(
               orElse: () {
                 roomStreamControllers.remove(getId(info));
@@ -98,7 +102,6 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
                 }
               },
             );
-            listenSocket.cancel();
           },
           cancelOnError: false,
         );

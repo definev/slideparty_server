@@ -10,6 +10,8 @@ Map<String, Stopwatch?> timerRoom = {};
 
 class RoomStreamController {
   final StreamController<RoomData> _controller = StreamController.broadcast();
+  final StreamController<String> _webSocketEventController =
+      StreamController.broadcast();
   RoomStreamController(RoomInfo info)
       : _data = RoomData(code: getId(info), players: {});
 
@@ -19,12 +21,16 @@ class RoomStreamController {
     _data = data;
     _controller.add(data);
   }
-  void setData(RoomData data) {
-    _data = data;
-  }
 
-  StreamSubscription listen(void Function(RoomData data) onListen) =>
+  void addWebSocketEvent(String message) =>
+      _webSocketEventController.sink.add(message);
+
+  StreamSubscription<RoomData> listen(void Function(RoomData data) onListen) =>
       _controller.stream.distinct().listen(onListen);
+  StreamSubscription<String> listenWebSocketStream(
+          WebSocketChannel webSocket) =>
+      _webSocketEventController.stream
+          .listen((message) => webSocket.sink.add(message));
 
   void fireState(WebSocketChannel ws, RoomData data) {
     ws.sink.add(
