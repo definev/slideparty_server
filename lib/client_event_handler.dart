@@ -180,7 +180,7 @@ class ClientEventHandler {
             payload.action,
           ],
         );
-        controller.data = controller.data..copyWith(players: players);
+        controller.data = controller.data.copyWith(players: players);
         Future.delayed(
           const Duration(seconds: 10),
           () {
