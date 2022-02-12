@@ -30,7 +30,6 @@ class ClientEventHandler {
                 controller.fireState(websocket, newData);
                 return;
               }
-              print('ROOMDATA ID: ${data.players.keys}');
 
               final winner = newData.players.values
                   .where((element) => element.currentBoard.remainTile == 0);
@@ -215,19 +214,15 @@ class ClientEventHandler {
   }
 
   void onRestart() {
-    controller.data.mapOrNull(
-      roomData: (data) {
-        final players = {
-          for (final player in data.players.entries)
-            player.key: player.value.copyWith(
-              currentBoard: Playboard.random(info.boardSize).currentBoard,
-              affectedActions: {},
-              usedActions: [],
-            ),
-        };
-        controller.data = data.copyWith(players: players);
-      },
-    );
+    final players = {
+      for (final player in controller.data.players.entries)
+        player.key: player.value.copyWith(
+          currentBoard: Playboard.random(info.boardSize).currentBoard,
+          affectedActions: {},
+          usedActions: [],
+        ),
+    };
+    controller.data = controller.data.copyWith(players: players);
   }
 
   void onLeaveRoom() {
