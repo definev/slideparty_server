@@ -42,11 +42,6 @@ shelf.Handler slidepartySocketHandler(String boardSize, String roomCode) {
           controller = roomStreamControllers[getId(info)]!;
         }
 
-        if (!timerRoom.containsKey(getId(info))) {
-          timerRoom[getId(info)] = Stopwatch();
-          timerRoom[getId(info)]!.start();
-        }
-
         final handler = ClientEventHandler(
           info: RoomInfo(size, roomCode),
           controller: controller,

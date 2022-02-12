@@ -6,7 +6,6 @@ import 'package:slideparty_socket/slideparty_socket_be.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 Map<String, RoomStreamController> roomStreamControllers = {};
-Map<String, Stopwatch?> timerRoom = {};
 
 class RoomStreamController {
   final StreamController<RoomData> _controller = StreamController.broadcast();
@@ -23,14 +22,15 @@ class RoomStreamController {
   }
 
   void addWebSocketEvent(String message) =>
-      _webSocketEventController.sink.add(message);
+      _webSocketEventController.add(message);
 
   StreamSubscription<RoomData> listen(void Function(RoomData data) onListen) =>
       _controller.stream.distinct().listen(onListen);
-  StreamSubscription<String> listenWebSocketStream(
-          WebSocketChannel webSocket) =>
-      _webSocketEventController.stream
-          .listen((message) => webSocket.sink.add(message));
+  StreamSubscription<String> listenWebSocketStream(WebSocketChannel ws) =>
+      _webSocketEventController.stream.distinct().listen((message) {
+        print('fire websocket: $message');
+        ws.sink.add(message);
+      });
 
   void fireState(WebSocketChannel ws, RoomData data) {
     ws.sink.add(
