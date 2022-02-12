@@ -130,85 +130,87 @@ class ClientEventHandler {
   }
 
   void onSendAction(dynamic json) {
-    controller.data.mapOrNull(
-      roomData: (data) {
-        final payload = SendAction.fromJson(json);
+    final payload = SendAction.fromJson(json);
 
-        switch (payload.action) {
-          case SlidepartyActions.clear:
-            var players = {...data.players};
-            if (data.players[playerId] == null) {
-              onLeaveRoom();
-              return;
-            }
-            players[playerId] = data.players[playerId]!.copyWith(
-              affectedActions: {},
-              usedActions: [
-                ...data.players[playerId]!.usedActions,
-                payload.action,
-              ],
-            );
-            controller.data = data.copyWith(players: players);
-            break;
-          default:
+    switch (payload.action) {
+      case SlidepartyActions.clear:
+        var players = {...controller.data.players};
+        if (controller.data.players[playerId] == null) {
+          onLeaveRoom();
+          return;
+        }
+        players[playerId] = controller.data.players[playerId]!.copyWith(
+          affectedActions: {},
+          usedActions: [
+            ...controller.data.players[playerId]!.usedActions,
+            payload.action,
+          ],
+        );
+        controller.data = controller.data.copyWith(players: players);
+        break;
+      default:
+        print(
+          'Action ${payload.action}'
+          '\n | From player $playerId'
+          '\n | To player ${payload.affectedPlayerId}',
+        );
+        var players = {...controller.data.players};
+        players[payload.affectedPlayerId] = controller
+            .data //
+            .players[payload.affectedPlayerId]!
+            .copyWith(
+          affectedActions: {
+            ...controller
+                .data //
+                .players[payload.affectedPlayerId]!
+                .affectedActions,
+            playerId: [
+              ...controller
+                      .data //
+                      .players[payload.affectedPlayerId]!
+                      .affectedActions[playerId] ??
+                  [],
+              payload.action,
+            ],
+          },
+        );
+        players[playerId] = controller.data.players[playerId]!.copyWith(
+          usedActions: [
+            ...controller.data.players[playerId]!.usedActions,
+            payload.action,
+          ],
+        );
+        controller.data = controller.data..copyWith(players: players);
+        Future.delayed(
+          const Duration(seconds: 10),
+          () {
             print(
-              'Action ${payload.action}'
+              'Remove action ${payload.action}'
               '\n | From player $playerId'
               '\n | To player ${payload.affectedPlayerId}',
             );
-            var players = {...data.players};
-            players[payload.affectedPlayerId] = data //
-                .players[payload.affectedPlayerId]!
-                .copyWith(
+            if (controller.data.players[payload.affectedPlayerId] == null) {
+              return;
+            }
+            var players = {...controller.data.players};
+            players[payload.affectedPlayerId] =
+                controller.data.players[payload.affectedPlayerId]!.copyWith(
               affectedActions: {
-                ...data //
-                    .players[payload.affectedPlayerId]!
-                    .affectedActions,
+                ...controller
+                    .data.players[payload.affectedPlayerId]!.affectedActions,
                 playerId: [
-                  ...data //
-                          .players[payload.affectedPlayerId]!
-                          .affectedActions[playerId] ??
-                      [],
-                  payload.action,
+                  ...controller.data.players[payload.affectedPlayerId]!
+                      .affectedActions[playerId]!
+                    ..remove(payload.action),
                 ],
-              },
+              }..removeWhere((key, value) => value.isEmpty),
             );
-            players[playerId] = data.players[playerId]!.copyWith(
-              usedActions: [
-                ...data.players[playerId]!.usedActions,
-                payload.action,
-              ],
-            );
-            controller.data = data.copyWith(players: players);
-            Future.delayed(
-              const Duration(seconds: 10),
-              () {
-                print(
-                  'Remove action ${payload.action}'
-                  '\n | From player $playerId'
-                  '\n | To player ${payload.affectedPlayerId}',
-                );
-                if (data.players[payload.affectedPlayerId] == null) return;
-                var players = {...data.players};
-                players[payload.affectedPlayerId] =
-                    data.players[payload.affectedPlayerId]!.copyWith(
-                  affectedActions: {
-                    ...data.players[payload.affectedPlayerId]!.affectedActions,
-                    playerId: [
-                      ...data.players[payload.affectedPlayerId]!
-                          .affectedActions[playerId]!
-                        ..remove(payload.action),
-                    ],
-                  }..removeWhere((key, value) => value.isEmpty),
-                );
-                controller.data = data.copyWith(players: players);
-                return;
-              },
-            );
-            break;
-        }
-      },
-    );
+            controller.data = controller.data.copyWith(players: players);
+            return;
+          },
+        );
+        break;
+    }
   }
 
   void onRestart() {
