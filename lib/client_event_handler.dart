@@ -213,7 +213,7 @@ class ClientEventHandler {
   }
 
   void onRestart() {
-    controller.setData(RoomData(code: getId(info), players: {}));
+    print('Restart room ${getId(info)}');
     websocket.sink.add(jsonEncode({'type': ServerStateType.restarting}));
   }
 
