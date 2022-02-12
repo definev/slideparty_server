@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:slideparty_playboard_utils/slideparty_playboard_utils.dart';
 import 'package:slideparty_socket/slideparty_socket_be.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
@@ -214,15 +213,8 @@ class ClientEventHandler {
   }
 
   void onRestart() {
-    final players = {
-      for (final player in controller.data.players.entries)
-        player.key: player.value.copyWith(
-          currentBoard: Playboard.random(info.boardSize).currentBoard,
-          affectedActions: {},
-          usedActions: [],
-        ),
-    };
-    controller.data = controller.data.copyWith(players: players);
+    controller.setData(RoomData(code: getId(info), players: {}));
+    websocket.sink.add(jsonEncode({'type': ServerStateType.restarting}));
   }
 
   void onLeaveRoom() {

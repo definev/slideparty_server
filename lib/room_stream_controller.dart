@@ -19,6 +19,9 @@ class RoomStreamController {
     _data = data;
     _controller.add(data);
   }
+  void setData(RoomData data) {
+    _data = data;
+  }
 
   StreamSubscription listen(void Function(RoomData data) onListen) =>
       _controller.stream.distinct().listen(onListen);
