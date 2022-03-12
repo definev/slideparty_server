@@ -12,9 +12,10 @@ void main(List<String> args) async {
   final router = Router() //
     ..get('/', (_) => Response.ok('Welcome to slideparty!'))
     ..get(
-        '/ws/<size>/<roomCode>',
-        (request, size, roomCode) =>
-            slidepartySocketHandler(size, roomCode)(request));
+      '/ws/<size>/<roomCode>',
+      (request, size, roomCode) =>
+          slidepartySocketHandler(size, roomCode)(request),
+    );
 
   sio
       .serve(router, _hostname, int.parse(portEnv ?? '9999')) //
